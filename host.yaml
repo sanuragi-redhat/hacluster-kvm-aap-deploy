@@ -1,0 +1,15 @@
+---
+selfhost:
+  hosts:
+    localhost:
+san_storage: 
+  hosts: 
+    san-storage.ocp1.redhat-workshop.in:
+ 
+kvm01: 
+  hosts: 
+    vcollab-kvm1.ocp1.redhat-workshop.in:
+kvm02: 
+  hosts: 
+    vcollab-kvm2.ocp1.redhat-workshop.in:
+
