@@ -1,0 +1,51 @@
+- name: Install and configure iSCSI initiator on Linux hosts
+  hosts: all
+  become: true
+  vars:
+    iscsi_target_ip: "192.168.1.244"
+    iscsi_target_iqn: "iqn.2025-08.com.vssi:cloud.target1"
+    chap_username: "admin"
+    chap_password: "admin"
+  tasks:
+    - name: Install iSCSI initiator utilities
+      ansible.builtin.package:
+        name: iscsi-initiator-utils
+        state: present
+
+    - name: Ensure iscsid service is enabled and started
+      ansible.builtin.service:
+        name: iscsid
+        state: started
+        enabled: true
+
+    - name: Discover iSCSI targets
+      ansible.builtin.command: >
+        iscsiadm -m discovery -t sendtargets -p {{ iscsi_target_ip }}
+      register: iscsi_discovery
+      changed_when: "'discovered' in iscsi_discovery.stdout"
+
+    - name: Set CHAP authentication for iSCSI target
+      ansible.builtin.command: >
+        iscsiadm -m node -T {{ iscsi_target_iqn }} -p {{ iscsi_target_ip }} --op update -n node.session.auth.authmethod -v CHAP
+      changed_when: false
+
+    - name: Set CHAP username for iSCSI target
+      ansible.builtin.command: >
+        iscsiadm -m node -T {{ iscsi_target_iqn }} -p {{ iscsi_target_ip }} --op update -n node.session.auth.username -v "{{ chap_username }}"
+      changed_when: false
+
+    - name: Set CHAP password for iSCSI target
+      ansible.builtin.command: >
+        iscsiadm -m node -T {{ iscsi_target_iqn }} -p {{ iscsi_target_ip }} --op update -n node.session.auth.password -v "{{ chap_password }}"
+      changed_when: false
+
+    - name: Log in to iSCSI target
+      ansible.builtin.command: >
+        iscsiadm -m node -T {{ iscsi_target_iqn }} -p {{ iscsi_target_ip }} --login
+      register: iscsi_login
+      changed_when: "'Login to' in iscsi_login.stdout or 'already present' in iscsi_login.stdout"
+
+    - name: Ensure iSCSI sessions are persistent across reboots
+      ansible.builtin.command: >
+        iscsiadm -m node -T {{ iscsi_target_iqn }} -p {{ iscsi_target_ip }} --op update -n node.startup -v automatic
+      changed_when: false

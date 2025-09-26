@@ -4,12 +4,12 @@ selfhost:
     localhost:
 san_storage: 
   hosts: 
-    san-storage.ocp1.redhat-workshop.in:
+    san-storage.cloud.vssi.com:
  
 kvm01: 
   hosts: 
-    vcollab-kvm1.ocp1.redhat-workshop.in:
+    vcollab-kvm1.cloud.vssi.com:
 kvm02: 
   hosts: 
-    vcollab-kvm2.ocp1.redhat-workshop.in:
+    vcollab-kvm2.cloud.vssi.com:
 

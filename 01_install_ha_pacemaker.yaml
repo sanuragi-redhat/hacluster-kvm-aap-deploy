@@ -1,0 +1,53 @@
+---
+- name: Install and configure Pacemaker HA Cluster on RHEL 9.6 KVM1 node
+  hosts: kvms
+  become: true
+  vars:
+    cluster_name: "kvm-ha-cluster"
+    cluster_nodes:
+      - vcollab-kvm1.cloud.vssi.com
+      - vcollab-kvm2.cloud.vssi.com
+
+  tasks:
+    - name: Install HA packages
+      dnf:
+        name:
+          - pacemaker
+          - pcs
+          - fence-agents-all
+        state: present
+
+    - name: Enable and start pcsd service
+      systemd:
+        name: pcsd
+        enabled: yes
+        state: started
+
+    - name: Set hacluster user password
+      user:
+        name: hacluster
+        password: "{{ 'Admin@123' | password_hash('sha512') }}"
+
+    - name: Authenticate pcs cluster nodes
+      shell: |
+        echo Admin@123 | pcs host auth {{ cluster_nodes | join(' ') }} -u hacluster --password
+      args:
+        executable: /bin/bash
+
+    - name: Setup cluster
+      shell: pcs cluster setup --name {{ cluster_name }} {{ cluster_nodes | join(' ') }}
+      args:
+        creates: /etc/corosync/corosync.conf
+
+    - name: Start and enable cluster
+      shell: pcs cluster start --all && pcs cluster enable --all
+
+    - name: Check cluster status
+      shell: pcs status
+      register: pcs_status
+
+    - name: Show cluster status
+      debug:
+        var: pcs_status.stdout
+        - name: Enable two_node mode for HA cluster
+          shell: pcs property set stonith-enabled=false && pcs property set no-quorum-policy=ignore && pcs property set two-node=1

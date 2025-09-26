@@ -1,0 +1,72 @@
+---
+- name: Install and configure iSCSI target with targetcli
+  hosts: san-storage.cloud.vssi.com
+  become: true
+  vars:
+    iscsi_ip: 192.168.1.244
+    iscsi_disks:
+      - sda
+      - sdb
+    iscsi_targets:
+      - disk: sda
+        backstore: block0
+        iqn: "iqn.2024-06.com.vssi.san-storage:sda"
+        chap_user: admin
+        chap_password: admin
+      - disk: sdb
+        backstore: block1
+        iqn: "iqn.2024-06.com.vssi.san-storage:sdb"
+        chap_user: admin
+        chap_password: admin
+    tasks:
+      - name: Install targetcli
+        ansible.builtin.yum:
+          name: targetcli
+          state: present
+
+      - name: Start and enable target service
+        ansible.builtin.service:
+          name: target
+          state: started
+          enabled: yes
+
+      - name: Create iSCSI targets
+        ansible.builtin.command: >
+          targetcli /iscsi create {{ item.iqn }}
+        loop: "{{ iscsi_targets }}"
+        args:
+          creates: "/etc/target/saveconfig.json"
+
+      - name: Create backstores for each disk
+        ansible.builtin.shell: |
+          targetcli /backstores/block create {{ item.backstore }} /dev/{{ item.disk }}
+        loop: "{{ iscsi_targets }}"
+        args:
+          warn: false
+
+      - name: Add LUNs to iSCSI targets
+        ansible.builtin.shell: |
+          targetcli /iscsi/{{ item.iqn }}/tpg1/luns create /backstores/block/{{ item.backstore }}
+        loop: "{{ iscsi_targets }}"
+        args:
+          warn: false
+
+      - name: Set portal IP address for each target
+        ansible.builtin.shell: |
+          targetcli /iscsi/{{ item.iqn }}/tpg1/portals delete 0.0.0.0 3260
+          targetcli /iscsi/{{ item.iqn }}/tpg1/portals create {{ iscsi_ip }} 3260
+        loop: "{{ iscsi_targets }}"
+
+      - name: Allow all initiators (demo only, restrict in production)
+        ansible.builtin.shell: |
+          targetcli /iscsi/{{ item.iqn }}/tpg1/acls create iqn.2024-06.com.vssi.initiator
+        loop: "{{ iscsi_targets }}"
+
+      - name: Configure CHAP authentication for initiator
+        ansible.builtin.shell: |
+          targetcli /iscsi/{{ item.iqn }}/tpg1/acls/iqn.2024-06.com.vssi.initiator set auth userid={{ item.chap_user }}
+          targetcli /iscsi/{{ item.iqn }}/tpg1/acls/iqn.2024-06.com.vssi.initiator set auth password={{ item.chap_password }}
+        loop: "{{ iscsi_targets }}"
+
+      - name: Save targetcli configuration
+        ansible.builtin.command: targetcli saveconfig
