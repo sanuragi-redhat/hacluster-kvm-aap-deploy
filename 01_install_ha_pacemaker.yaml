@@ -48,10 +48,7 @@
         password: "{{ 'Admin@123' | password_hash('sha512') }}"
 
     - name: Authenticate pcs cluster nodes
-      shell: |
-        echo Admin@123 | pcs host auth {{ cluster_nodes | join(' ') }} -u hacluster --password
-      args:
-        executable: /bin/bash
+      shell: pcs host auth {{ cluster_nodes | join(' ') }} -u hacluster --password Admin@123
 
     - name: Setup cluster
       shell: pcs cluster setup  vcollab-kvm vcollab-kvm1.cloud.vssi.com vcollab-kvm2.cloud.vssi.com --password Admin@123
