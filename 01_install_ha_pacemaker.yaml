@@ -9,9 +9,32 @@
       - vcollab-kvm2.cloud.vssi.com
 
   tasks:
+    - name: Enable Resilient Storage repository
+      ansible.builtin.command: >
+        subscription-manager repos --enable=rhel-9-for-x86_64-resilientstorage-rpms
+      args:
+      warn: false
+
+    - name: Enable High Availability repository
+      ansible.builtin.command: >
+        subscription-manager repos --enable=rhel-9-for-x86_64-highavailability-rpms
+      args:
+      warn: false
+
+    - name: Install High Availability group packages
+      ansible.builtin.yum:
+        name: "@High Availability"
+        state: present
+
+    - name: Install Resilient Storage group packages
+      ansible.builtin.yum:
+        name: "@Resilient Storage"
+        state: present
     - name: Install HA packages
       dnf:
         name:
+          - iscsi-initiator-utils
+          - device-mapper-multipath*
           - pacemaker
           - pcs
           - fence-agents-all
