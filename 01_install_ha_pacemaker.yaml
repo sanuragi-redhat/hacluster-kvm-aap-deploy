@@ -3,7 +3,7 @@
   hosts: kvms
   become: true
   vars:
-    cluster_name: "kvm-ha-cluster"
+    cluster_name: "vcollab-kvm"
     cluster_nodes:
       - vcollab-kvm1.cloud.vssi.com
       - vcollab-kvm2.cloud.vssi.com
@@ -12,14 +12,10 @@
     - name: Enable Resilient Storage repository
       ansible.builtin.command: >
         subscription-manager repos --enable=rhel-9-for-x86_64-resilientstorage-rpms
-      args:
-      warn: false
 
     - name: Enable High Availability repository
       ansible.builtin.command: >
         subscription-manager repos --enable=rhel-9-for-x86_64-highavailability-rpms
-      args:
-      warn: false
 
     - name: Install High Availability group packages
       ansible.builtin.yum:
@@ -58,7 +54,7 @@
         executable: /bin/bash
 
     - name: Setup cluster
-      shell: pcs cluster setup --name {{ cluster_name }} {{ cluster_nodes | join(' ') }}
+      shell: pcs cluster setup  vcollab-kvm vcollab-kvm1.cloud.vssi.com vcollab-kvm2.cloud.vssi.com --password Admin@123
       args:
         creates: /etc/corosync/corosync.conf
 

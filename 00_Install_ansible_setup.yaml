@@ -4,7 +4,6 @@
   become: true
   tasks:
     - name: Register system with Red Hat Subscription Manager
-      name: Register as rhuser with rhpassword  and auto-subscribe to available content.
       community.general.redhat_subscription:
         state: present
         username: r**********
