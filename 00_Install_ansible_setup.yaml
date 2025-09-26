@@ -1,18 +1,22 @@
 ---
-- name: Install ansible-core 2.16 on RHEL 9.6
-  hosts: all
+- name: Install required packages on RHEL 9.6
+  hosts: kvms
   become: true
-  vars:
-    rhsm_username: ********
-    rhsm_password: ********
   tasks:
+    - name: Register system with Red Hat Subscription Manager
+      name: Register as rhuser with rhpassword  and auto-subscribe to available content.
+      community.general.redhat_subscription:
+        state: present
+        username: r**********
+        password: r**********
+        auto_attach: true
+
     - name: Install required packages
       ansible.builtin.dnf:
         name:
           - subscription-manager
           - python3
           - python3-pip
-          - python3-virtualenv
           - gcc
           - libffi-devel
           - python3-devel
@@ -23,36 +27,4 @@
           - tmux
           - git
         state: present
-    - name: Register system with Red Hat Subscription Manager
-      community.general.redhat_subscription:
-        state: present
-        username: "{{ rhsm_username }}"
-        password: "{{ rhsm_password }}"
-        auto_attach: true
-
-    - name: Remove EPEL repository if present
-      ansible.builtin.yum:
-        name: epel-release
-        state: absent
-
-    - name: Enable Ansible Automation Platform 2.6 RHEL 9 RPMs repository
-      ansible.builtin.command: >
-        subscription-manager repos --enable=ansible-automation-platform-2.6-for-rhel-9-x86_64-rpms
-      args:
-        warn: false
-
-    - name: Install ansible-core 2.16
-      ansible.builtin.dnf:
-        name: ansible-core-2.16*
-        state: present
-
-    - name: Verify ansible-core version
-      ansible.builtin.command: ansible --version
-      register: ansible_version
-      changed_when: false
-
-    - name: Show ansible-core version
-      ansible.builtin.debug:
-        var: ansible_version.stdout
-
 

@@ -6,10 +6,8 @@ san_storage:
   hosts: 
     san-storage.cloud.vssi.com:
  
-kvm01: 
+kvms: 
   hosts: 
     vcollab-kvm1.cloud.vssi.com:
-kvm02: 
-  hosts: 
     vcollab-kvm2.cloud.vssi.com:
 

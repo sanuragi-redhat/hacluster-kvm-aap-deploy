@@ -72,5 +72,5 @@
     - name: Show cluster status
       debug:
         var: pcs_status.stdout
-        - name: Enable two_node mode for HA cluster
-          shell: pcs property set stonith-enabled=false && pcs property set no-quorum-policy=ignore && pcs property set two-node=1
+    - name: Enable two_node mode for HA cluster
+      shell: pcs property set stonith-enabled=false && pcs property set no-quorum-policy=ignore && pcs property set two-node=1
